@@ -24,11 +24,12 @@ class ResourceManager:
         return [res for res in self.resources if res.resource_type == resource_type and res.is_allocated]
 
     def allocate_resource(self, task, allocation_criteria):
+        print(f'Trying to allocate {task} using {allocation_criteria}')
         resource: Optional[Resource] = None
         available_resources = self.get_available_resources(task.cpu_requirement[0], task.cpu_requirement[1])
 
         if not available_resources:
-            print(f"No resource available. Task {task.task_id} is waiting for resources.")
+            print(f"No resource available. {task} is waiting for resources.")
             self.task_queue.append((task, allocation_criteria))
             return
 
@@ -37,14 +38,14 @@ class ResourceManager:
         elif allocation_criteria == "execution_time":
             resource = min(available_resources, key=lambda x: x.cpu_config)
 
-        resource.allocate(task.task_id)
+        resource.allocate(task)
         resource.execute_task()
 
-    def check_task_status(self, task_id):
+    def check_task_status(self, task_id: int) -> str:
         for resource in self.resources:
-            if resource.task_id == task_id:
-                return f"Task {task_id} is allocated on Resource {resource.resource_id}. " \
-                       f"Start Time: {resource.start_time}, End Time: {resource.end_time}"
+            for task in resource.task_history:
+                if task.task_id == task_id:
+                    return task.get_task_details()
 
         for queued_task, allocation_criteria in self.task_queue:
             if queued_task.task_id == task_id:
